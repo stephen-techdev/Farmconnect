@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
 type Theme = 'light' | 'dark'
 
@@ -9,17 +9,31 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
+function readStoredTheme(): Theme {
+  try {
     const saved = localStorage.getItem('farmconnect-theme')
-    return (saved as Theme) || 'light'
-  })
+    return saved === 'dark' ? 'dark' : 'light'
+  } catch {
+    return 'light'
+  }
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setTheme] = useState<Theme>(readStoredTheme)
+
+  // The stylesheet keys off [data-theme='dark'] on <html>, so the attribute has
+  // to be applied on mount too - not only inside toggleTheme. Without this a
+  // reload renders light even though state says dark.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
 
   function toggleTheme() {
     setTheme((prev) => {
       const next = prev === 'light' ? 'dark' : 'light'
-      localStorage.setItem('farmconnect-theme', next)
-      document.documentElement.setAttribute('data-theme', next)
+      try {
+        localStorage.setItem('farmconnect-theme', next)
+      } catch { /* private mode */ }
       return next
     })
   }

@@ -136,7 +136,7 @@ export default function UserRegister() {
           Already have an account? <Link to="/login">Sign in</Link>
         </p>
         <p className="auth-link">
-          <Link to="/welcome"><i className="fa-solid fa-arrow-left" /> Back</Link>
+          <Link to="/"><i className="fa-solid fa-arrow-left" /> Back to Store</Link>
         </p>
       </div>
     </div>

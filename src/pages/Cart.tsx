@@ -3,7 +3,8 @@ import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { generateCodCode, type UpiDetails } from '../lib/upi'
 
 export default function Cart() {
   const { items, total, updateQuantity, removeItem, clearCart } = useCart()
@@ -11,6 +12,25 @@ export default function Cart() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [placing, setPlacing] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'upi'>('cod')
+  const [upi, setUpi] = useState<UpiDetails>({ vpa: '', payeeName: 'FarmConnect' })
+
+  async function loadUpiSettings() {
+    const { data } = await supabase
+      .from('settings')
+      .select('key,value')
+      .in('key', ['upi_id', 'upi_payee_name'])
+    const map: Record<string, string> = {}
+    for (const row of data || []) map[row.key] = row.value
+    setUpi({
+      vpa: map.upi_id || '',
+      payeeName: map.upi_payee_name || 'FarmConnect',
+    })
+  }
+
+  useEffect(() => {
+    loadUpiSettings()
+  }, [])
 
   async function handleCheckout() {
     if (items.length === 0) return
@@ -23,6 +43,10 @@ export default function Cart() {
 
     setPlacing(true)
 
+    // Generated in the browser and carried to the payment page in router state,
+    // so no extra order columns are required.
+    const code = generateCodCode()
+
     const orderPayload = {
       total: total,
       status: 'pending',
@@ -30,7 +54,7 @@ export default function Cart() {
       customer_phone: user.phone || '',
       customer_email: user.email || 'guest@farmconnect.local',
       shipping_address: 'Local pickup',
-      payment_method: 'cod',
+      payment_method: paymentMethod,
     }
 
     const { data, error } = await supabase.from('orders').insert(orderPayload).select().single()
@@ -59,11 +83,29 @@ export default function Cart() {
       return
     }
 
-    console.log('Order placed successfully:', data.id)
+    // Mirror into `payments` using only columns that already exist.
+    await supabase.from('payments').insert({
+      order_id: data.id,
+      amount: total,
+      method: paymentMethod,
+      status: 'pending',
+    })
+
     clearCart()
     setPlacing(false)
     showToast('Order placed successfully!', 'success')
-    navigate('/track-order')
+
+    // Hand off to the dedicated payment page.
+    navigate('/payment', {
+      state: {
+        orderId: data.id,
+        total,
+        method: paymentMethod,
+        code,
+        upiId: upi.vpa,
+        payeeName: upi.payeeName,
+      },
+    })
   }
 
   if (items.length === 0) {
@@ -128,6 +170,42 @@ export default function Cart() {
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--sp-1)' }}>
             <span className="text-muted">Total</span>
             <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary-600)' }}>₹{total.toFixed(2)}</span>
+          </div>
+
+          <div style={{ marginTop: 'var(--sp-1)', marginBottom: 'var(--sp-1)' }}>
+            <span className="form-label">Payment Method</span>
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem',
+                border: `2px solid ${paymentMethod === 'cod' ? 'var(--primary-500)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-md)', cursor: 'pointer', marginBottom: '0.4rem',
+              }}
+            >
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === 'cod'}
+                onChange={() => setPaymentMethod('cod')}
+              />
+              <i className="fa-solid fa-money-bill-wave text-primary" />
+              <span style={{ fontWeight: 600 }}>Cash on Delivery</span>
+            </label>
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem',
+                border: `2px solid ${paymentMethod === 'upi' ? 'var(--primary-500)' : 'var(--border)'}`,
+                borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              }}
+            >
+              <input
+                type="radio"
+                name="payment"
+                checked={paymentMethod === 'upi'}
+                onChange={() => setPaymentMethod('upi')}
+              />
+              <i className="fa-solid fa-qrcode text-primary" />
+              <span style={{ fontWeight: 600 }}>Online Payment (UPI)</span>
+            </label>
           </div>
           <button className="btn btn-primary btn-block btn-lg" onClick={handleCheckout} disabled={placing}>
             {placing ? <i className="fa-solid fa-spinner fa-spin" /> : <><i className="fa-solid fa-check" /> Place Order</>}

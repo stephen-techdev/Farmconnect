@@ -10,6 +10,7 @@ const navItems = [
   { to: '/admin/categories', icon: 'fa-tags', label: 'Categories' },
   { to: '/admin/orders', icon: 'fa-clipboard-list', label: 'Orders' },
   { to: '/admin/customers', icon: 'fa-users', label: 'Customers' },
+  { to: '/admin/payments', icon: 'fa-indian-rupee-sign', label: 'Payments' },
   { to: '/admin/reports', icon: 'fa-chart-line', label: 'Reports' },
   { to: '/admin/settings', icon: 'fa-gear', label: 'Settings' },
 ]

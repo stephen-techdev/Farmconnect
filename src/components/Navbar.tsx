@@ -13,15 +13,7 @@ export default function Navbar() {
 
   async function handleSignOut() {
     await userSignOut()
-    navigate('/welcome')
-  }
-
-  function handleAdminClick() {
-    if (admin) {
-      navigate('/admin')
-    } else {
-      navigate('/admin/login')
-    }
+    navigate('/')
   }
 
   return (
@@ -50,22 +42,13 @@ export default function Navbar() {
             <i className={`fa-solid ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`} />
           </button>
 
-          <button
-            className="nav-admin-btn"
-            onClick={handleAdminClick}
-            title={admin ? 'Go to Admin Dashboard' : 'Admin Login'}
-          >
-            <i className="fa-solid fa-shield-halved" />
-            <span className="admin-label">Admin</span>
-          </button>
-
           {admin ? (
             <>
               <Link to="/admin" className="nav-user">
                 <span className="user-name">{admin.name.split(' ')[0]}</span>
                 <span className="avatar">{admin.name.charAt(0).toUpperCase()}</span>
               </Link>
-              <button className="theme-toggle" onClick={async () => { await adminSignOut(); navigate('/welcome') }} title="Admin sign out">
+              <button className="theme-toggle" onClick={async () => { await adminSignOut(); navigate('/') }} title="Admin sign out">
                 <i className="fa-solid fa-right-from-bracket" />
               </button>
             </>

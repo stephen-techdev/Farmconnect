@@ -4,18 +4,18 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Products from './pages/Products'
 import Cart from './pages/Cart'
+import Payment from './pages/Payment'
 import TrackOrder from './pages/TrackOrder'
 import Contact from './pages/Contact'
-import Welcome from './pages/Welcome'
 import UserLogin from './pages/UserLogin'
 import UserRegister from './pages/UserRegister'
-import Login from './pages/Login'
 import Register from './pages/Register'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminCategories from './pages/admin/AdminCategories'
 import AdminOrders from './pages/admin/AdminOrders'
 import AdminCustomers from './pages/admin/AdminCustomers'
+import AdminPayments from './pages/admin/AdminPayments'
 import AdminReports from './pages/admin/AdminReports'
 import AdminSettings from './pages/admin/AdminSettings'
 
@@ -23,13 +23,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { admin, loading } = useAuth()
   if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>
   if (!admin) return <Navigate to="/admin/login" replace />
-  return <>{children}</>
-}
-
-function UserRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="spinner-wrap"><div className="spinner" /></div>
-  if (!user) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
@@ -45,23 +38,19 @@ function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
-      {/* Start page */}
-      <Route path="/welcome" element={<Welcome />} />
-
-      {/* User auth */}
+      {/* Auth: one login page, auto-routes admins to the dashboard */}
       <Route path="/login" element={<UserLogin />} />
+      <Route path="/admin/login" element={<UserLogin />} />
       <Route path="/register" element={<UserRegister />} />
-
-      {/* Admin auth */}
-      <Route path="/admin/login" element={<Login />} />
       <Route path="/admin/register" element={<Register />} />
 
-      {/* User pages (require user login) */}
-      <Route path="/" element={<UserRoute><Layout><Home /></Layout></UserRoute>} />
-      <Route path="/products" element={<UserRoute><Layout><Products /></Layout></UserRoute>} />
-      <Route path="/cart" element={<UserRoute><Layout><Cart /></Layout></UserRoute>} />
-      <Route path="/track-order" element={<UserRoute><Layout><TrackOrder /></Layout></UserRoute>} />
-      <Route path="/contact" element={<UserRoute><Layout><Contact /></Layout></UserRoute>} />
+      {/* Storefront - publicly browsable, no login required */}
+      <Route path="/" element={<Layout><Home /></Layout>} />
+      <Route path="/products" element={<Layout><Products /></Layout>} />
+      <Route path="/cart" element={<Layout><Cart /></Layout>} />
+      <Route path="/payment" element={<Layout><Payment /></Layout>} />
+      <Route path="/track-order" element={<Layout><TrackOrder /></Layout>} />
+      <Route path="/contact" element={<Layout><Contact /></Layout>} />
 
       {/* Admin pages (require admin login) */}
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
@@ -69,11 +58,12 @@ export default function App() {
       <Route path="/admin/categories" element={<AdminRoute><AdminCategories /></AdminRoute>} />
       <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
       <Route path="/admin/customers" element={<AdminRoute><AdminCustomers /></AdminRoute>} />
+      <Route path="/admin/payments" element={<AdminRoute><AdminPayments /></AdminRoute>} />
       <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
       <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
 
-      {/* Default redirect to welcome */}
-      <Route path="*" element={<Navigate to="/welcome" replace />} />
+      {/* Default: land on the storefront */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

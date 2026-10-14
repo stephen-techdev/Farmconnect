@@ -19,7 +19,7 @@ export default function AdminLayout({ children, navItems, title }: {
 
   async function handleSignOut() {
     await adminSignOut()
-    navigate('/welcome')
+    navigate('/')
   }
 
   return (
